@@ -1,4 +1,5 @@
 use warehouse COMPUTE_WH;
+use database FIVETRAN_DB;
 
 --Inventory Table Build
 WITH RECURSIVE cteItem AS (Select id,
