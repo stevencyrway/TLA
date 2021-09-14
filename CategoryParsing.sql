@@ -1,5 +1,5 @@
 use warehouse COMPUTE_WH;
-
+use database FIVETRAN_DB;
 
 select id, FULL_PATH_NAME, NODE_DEPTH,
                             SPLIT_PART(TRIM(ctecategory.NAME, ' $.'), '/', 1) as Category1,

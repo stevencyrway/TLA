@@ -1,4 +1,5 @@
-use warehouse COMPUTE_WH
+use warehouse COMPUTE_WH;
+use database FIVETRAN_DB;
 
 --Lightspeed & Shopify Inventory combined.
 WITH RECURSIVE cteItem AS (Select id,
