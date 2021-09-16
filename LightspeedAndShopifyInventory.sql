@@ -183,3 +183,25 @@ from cteShopify
 
 
 
+---- /// Shopify /// ---- Still needs to be whittled down to only relevant columns.
+   -- Preps shopify by joining product and product variant to get all details.
+   , cteShopifyinventory AS (Select 'Shopify'              as Source,
+                                    P.product_type         as Category1,
+                                    NULL                   as Category2,
+                                    NULL                   as Category3,
+                                    TO_DATE(il.UPDATED_AT) as Date,
+                                    II.COST                as default_cost,
+                                    PV.Sku,
+                                    IL.available           as qoh,
+                                    NULL                   as backorder,
+                                    NULL                   as reorder_point,
+                                    NULL                   as reorder_level,
+                                    'Shopify Ecom'         as ShopName,
+                                    1                      as RN
+                             from LOVERS_SHOPIFY.PRODUCT as P
+                                      join LOVERS_SHOPIFY.PRODUCT_VARIANT as PV
+                                           on P.ID = PV.PRODUCT_ID
+                                      join LOVERS_SHOPIFY.INVENTORY_ITEM as II
+                                           on pv.INVENTORY_ITEM_ID = ii.ID
+                                      join LOVERS_SHOPIFY.INVENTORY_LEVEL IL
+                                           on PV.INVENTORY_ITEM_ID = IL.INVENTORY_ITEM_ID)
