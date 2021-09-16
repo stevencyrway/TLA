@@ -2,35 +2,42 @@ use warehouse COMPUTE_WH;
 use database FIVETRAN_DB;
 
 --Inventory Table Build
-WITH RECURSIVE cteItem AS (Select id,
+WITH RECURSIVE
+     ctelightspeedItem AS (Select id,
                                   CATEGORY_ID,
-                                  UPDATED_TIME,
+                                 to_date(UPDATED_TIME) as ItemDate,
                                   CUSTOM_SKU,
                                   ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as RowNumber
-                           FROM LIGHT_SPEED_RETAIL.ITEM_HISTORY
-                           group by ID, UPDATED_TIME, CATEGORY_ID, CUSTOM_SKU)
+                           FROM LIGHT_SPEED_RETAIL.ITEM_HISTORY)
    --Assigns row numbers to to get values over time
-   , cteLightspeedInventory AS (Select to_date(UPDATED_TIME),
+   , cteLightspeedInventory AS (Select to_date(UPDATED_TIME) as InventoryDate,
                              item_id,
                              shop_id,
                              qoh,
                              backorder,
                              ROW_NUMBER() OVER (PARTITION BY ID, ITEM_ID, SHOP_ID, to_date(UPDATED_TIME) ORDER BY UPDATED_TIME DESC) as RowNumber
-                      FROM LIGHT_SPEED_RETAIL.ITEM_SHOP_HISTORY
-                      group by ID, ITEM_ID, SHOP_ID, UPDATED_TIME, QOH, BACKORDER)
+                      FROM LIGHT_SPEED_RETAIL.ITEM_SHOP_HISTORY)
+   , ctelightspeedcombined as (Select item_id,
+                                      shop_id,
+                                      qoh,
+                                      backorder,
+                                      cteLightspeedInventory.rownumber as RN,
+                                      id,
+                                      category_id,
+                                      InventoryDate as Date,
+                                      custom_sku
+                               from cteLightspeedInventory
+                                        left outer join ctelightspeedItem
+                                                        on cteLightspeedInventory.ITEM_ID = ctelightspeedItem.ID
+                                                            where ctelightspeedItem.RowNumber = 1
+                                                            and cteLightspeedInventory.RowNumber = 1
+)
    --Preps shopify by joining product and product variant to get all details
    , cteShopifyinventory AS (Select 'Shopify'              as Source,
                                     P.product_type         as Category1,
                                     NULL                   as Category2,
                                     NULL                   as Category3,
                                     TO_DATE(il.UPDATED_AT) as Date,
-                                    YEAR(il.UPDATED_AT)    as Year,
-                                    MONTH(il.UPDATED_AT)   as Month,
-                                    WEEKISO(il.UPDATED_AT) as Week,
-                                    P.title                as ItemDescription,
-                                    PV.option_1            as attribute_1,
-                                    PV.option_2            as attribute_2,
-                                    PV.option_3            as attribute_3,
                                     II.COST                as default_cost,
                                     PV.Sku,
                                     P.status,
@@ -52,9 +59,45 @@ WITH RECURSIVE cteItem AS (Select id,
    , cteYandyInventoryHistoryPrep AS (Select im.oldinv,
                                          to_date(im.changetime) as InventoryDate,
                                          im.option_id,
-                                         im.newinv,
+                                         im.newinv as QOH,
                                              ROW_NUMBER() OVER (PARTITION BY OPTION_ID,to_date(CHANGETIME) ORDER BY CHANGETIME DESC) as RowNumber
                                   from POSTGRES_PUBLIC.INVENTORY_MOVE IM)
+   ---!! neeed clarity !! Not sure which price we should be using from product options in yandy, there exists catalog price, map price, option price and more.
+   , cteYandyProducts AS (select po.PROD_ID as UUID,
+                                 PROD_ID,
+                                 PROD_OPTION_ID,
+                                 po.option_sku,
+                                 po.option_price,
+                                 null       as Cost
+                          from POSTGRES_PUBLIC.product_options po)
+   , cteyandyinventorycombined as (Select oldinv,
+                                          inventorydate,
+                                          option_id,
+                                          qoh,
+                                          rownumber,
+                                          uuid,
+                                          prod_id,
+                                          prod_option_id,
+                                          option_sku,
+                                          option_price,
+                                          cost
+                                   from cteYandyInventoryHistoryPrep
+                                            join cteYandyProducts on PROD_OPTION_ID = OPTION_ID
+                                   where RowNumber = 1)
+
+--Lightspeed Completed Inventory Fact Details
+Select item_id,
+       shop_id,
+       qoh,
+       backorder,
+       id,
+       category_id,
+       Date,
+       custom_sku
+from ctelightspeedcombined
+where RN = 1
+and ITEM_ID = 2407
+
 
 
 ---Need Yandy location data for location id
@@ -74,21 +117,7 @@ from cteYandyInventoryHistoryPrep YIHP
 
 
 
-select po.prod_option_id,
-       po.la_sku,
-       po.option_style,
-       po.upc,
-       po.catalog_price,
-       po.map_price, --maybe only necessary if catalog doesn't match map
-       po.on_order,
-       po.fnsku,
-       po.option_inv,
-       po.backordered,
-       po.option_sku,
-       po.option_price
 
-from POSTGRES_PUBLIC.product_options po
-where po.ON_ORDER is not null
-and po.ON_ORDER >= 1
+
 
 
