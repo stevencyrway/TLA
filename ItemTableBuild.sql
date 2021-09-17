@@ -24,7 +24,7 @@ WITH RECURSIVE
                                  CUSTOM_SKU,
                                  MANUFACTURER_ID                                                as ManufacturerID,
                                  DEFAULT_VENDOR_ID                                              as VendorID,
-                                 CATEGORY_ID,
+                                 to_varchar(CATEGORY_ID) as CategoryID,
                                  DESCRIPTION,
                                  ATTRIBUTE_1,
                                  ATTRIBUTE_2,
@@ -36,7 +36,7 @@ WITH RECURSIVE
    , cteyandycategoryjoin as (Select PROD_ID,
                                      concat(PTYPE, '_', N2) as CategoryID
                               from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS)
-   , cteYandyProducts AS (select concat(po.PROD_ID, '/', po.PROD_OPTION_ID) as UUID,
+   , cteYandyProducts AS (select concat(to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
                                  PROD_ID,
                                  PROD_OPTION_ID,
                                  po.option_sku,
@@ -76,26 +76,25 @@ Select NUll       as Product,
        null       as ManufacturerID,
        null       as VendorID,
        CategoryID as CategoryID,
-       null       as 'Desc',
+       null       as Description,
        Null       as Color,
        SIZE_VALUE as Size,
        SIZE_NAME  as Attribute3,
-       'Yandy'    as 'Source'
+       'Yandy'    as Source
 from cteyandyinventorycombined
 
 union all
-
 -- Lightspeed Item's
 Select null           as Product,
        CUSTOM_SKU     as SKU,
        null           as UUID,
        ManufacturerID as ManufacturerID,
        VendorID       as VendorID,
-       CATEGORY_ID    as CategoryID,
-       DESCRIPTION    as 'Desc',
+       CategoryID   as CategoryID,
+       DESCRIPTION    as Description,
        Attribute_1    as Color,
        Attribute_2    as Size,
        Attribute_3    as Attribute3,
-       'Lightspeed'   as 'Source'
+       'Lightspeed'   as Source
 from ctelightspeedItem
 
