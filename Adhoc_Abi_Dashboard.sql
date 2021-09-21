@@ -1,4 +1,4 @@
-use warehouse COMPUTE_WH
+use warehouse COMPUTE_WH;
 
 -- These two CTE's are views in the source system at yandy, the logic is replicated here for simplicity and the fact we don't have replication of those views.
 WITH RECURSIVE cte_optionview as (
