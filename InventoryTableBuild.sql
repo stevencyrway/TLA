@@ -126,4 +126,3 @@ Select Date,
        'LoversLightspeed'          as Source
 from ctelightspeedcombined;
 
-

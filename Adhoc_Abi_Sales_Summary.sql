@@ -85,6 +85,7 @@ Select ov.ptype,
        SUM(f.quantity * f.price)                             as total_revenue,
        SUM(f.quantity * f.cost_price)                        as total_COGS,
        SUM(f.quantity * f.price - f.quantity * f.cost_price) as total_GP,
+       to_date(concat( month(to_date(to_timestamp(f.STAMPED))),'/01/',year(to_date(to_timestamp(f.STAMPED))))) as Date,
        month(to_date(to_timestamp(f.STAMPED))) as Month,
        year(to_date(to_timestamp(f.STAMPED))) as Year
 from FIVETRAN_DB.POSTGRES_PUBLIC.fifo_transactions f
@@ -93,4 +94,4 @@ from FIVETRAN_DB.POSTGRES_PUBLIC.fifo_transactions f
 WHERE o.order_status IN (1, 2, 3)
   AND f.reason_code = 'SALE'
   AND to_timestamp(f.stamped) between '2020-01-01 00:00:00' AND '2021-01-31 23:59:59'
-group by ov.ptype, year, month;
+group by ov.ptype, year, month, date;

@@ -83,6 +83,8 @@ Select ov.brand_name,
        ov.ptype,
        ov.brand_code || '-' || ov.prod_sku                   AS PRODUCT_SKU,
        ov.prod_id,
+--        to_date(concat( month(to_date(to_timestamp(f.STAMPED))),'01',year(to_date(to_timestamp(f.STAMPED))))) as Date,
+       last_day(to_date(to_timestamp(f.STAMPED)), 'week') as Date,
        month(to_date(to_timestamp(f.STAMPED))) as Month,
        year(to_date(to_timestamp(f.STAMPED))) as Year,
        SUM(f.quantity)                                       as total_units,
@@ -94,5 +96,5 @@ from FIVETRAN_DB.POSTGRES_PUBLIC.fifo_transactions f
          INNER JOIN cte_optionview ov on ov.prod_option_id = f.prod_option_id
 WHERE o.order_status IN (1, 2, 3)
   AND f.reason_code = 'SALE'
-  AND to_timestamp(f.stamped) between '2021-01-01 00:00:00' AND '2021-01-31 23:59:59'
-group by year, month, ov.brand_name, ov.ptype, PRODUCT_SKU, ov.prod_id;
+  AND to_timestamp(f.stamped) between '2020-01-01 00:00:00' AND current_timestamp()
+group by year, month, date, ov.brand_name, ov.ptype, PRODUCT_SKU, ov.prod_id

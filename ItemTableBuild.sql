@@ -37,21 +37,27 @@ WITH RECURSIVE
                                      concat(PTYPE, '_', N2) as CategoryID
                               from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS)
    , cteYandyProducts AS (select concat(to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
-                                 PROD_ID,
+                                 po.PROD_ID,
+                                 PRODUCT_COLORS.PROD_ID,
                                  PROD_OPTION_ID,
                                  po.option_sku,
-                                 OPTION_COLOR,
+                                 COLOR_NAME,
                                  OPTION_SIZE,
                                  OPTION_STYLE,
                                  SIZES_TABLE_ID
-                          from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po)
+                          from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po
+                                   join POSTGRES_PUBLIC.PRODUCT_COLORS on po.PROD_ID = PRODUCT_COLORS.PROD_ID)
    , cteyandyProductSizes as (select SIZE_TYPE_ID, SIZE_TYPE, SIZE_NAME, SIZE_VALUE
                               from FIVETRAN_DB.POSTGRES_PUBLIC.SIZES_TABLE)
+   , cteyandyProductSizes as (select option_color,
+                                     cgid,
+                                     main_color_id
+                              from FIVETRAN_DB.POSTGRES_PUBLIC.COLOR_GROUPS)
    , cteyandyinventorycombined as (Select uuid,
                                           cteYandyProducts.prod_id,
                                           prod_option_id,
                                           option_sku,
-                                          option_color,
+                                          COLOR_NAME,
                                           option_size,
                                           option_style,
                                           sizes_table_id,
@@ -77,7 +83,7 @@ Select NUll       as Product,
        null       as VendorID,
        CategoryID as CategoryID,
        null       as Description,
-       Null       as Color,
+       COLOR_NAME as Color,
        SIZE_VALUE as Size,
        SIZE_NAME  as Attribute3,
        'Yandy'    as Source
@@ -98,3 +104,16 @@ Select null           as Product,
        'Lightspeed'   as Source
 from ctelightspeedItem
 
+select * from POSTGRES_PUBLIC.PRODUCT_COLORS
+
+
+select concat(to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
+                                 po.PROD_ID,
+                                PRODUCT_COLORS.PROD_ID,
+                                 PROD_OPTION_ID,
+                                 po.option_sku,
+                                 COLOR_NAME,
+                                 OPTION_SIZE,
+                                 OPTION_STYLE,
+                                 SIZES_TABLE_ID
+                          from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po join POSTGRES_PUBLIC.PRODUCT_COLORS on po.PROD_ID = PRODUCT_COLORS.PROD_ID
