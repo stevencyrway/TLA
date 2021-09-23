@@ -38,7 +38,6 @@ WITH RECURSIVE
                               from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS)
    , cteYandyProducts AS (select concat(to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
                                  po.PROD_ID,
-                                 PRODUCT_COLORS.PROD_ID,
                                  PROD_OPTION_ID,
                                  po.option_sku,
                                  COLOR_NAME,
@@ -70,8 +69,6 @@ WITH RECURSIVE
                                             join cteyandycategoryjoin
                                                  on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
                                             left outer join cteyandyProductSizes on SIZES_TABLE_ID = SIZE_TYPE_ID)
-
-
 ---//// WHERE IT ALL COMBINES ////---
 -- the intent here is to take all the relevant cte's above and combine them through unions to make one conjoined inventory table.
 -- This methodology will be followed for all tables.
@@ -102,18 +99,7 @@ Select null           as Product,
        Attribute_2    as Size,
        Attribute_3    as Attribute3,
        'Lightspeed'   as Source
-from ctelightspeedItem
-
-select * from POSTGRES_PUBLIC.PRODUCT_COLORS
+from ctelightspeedItem;
 
 
-select concat(to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
-                                 po.PROD_ID,
-                                PRODUCT_COLORS.PROD_ID,
-                                 PROD_OPTION_ID,
-                                 po.option_sku,
-                                 COLOR_NAME,
-                                 OPTION_SIZE,
-                                 OPTION_STYLE,
-                                 SIZES_TABLE_ID
-                          from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po join POSTGRES_PUBLIC.PRODUCT_COLORS on po.PROD_ID = PRODUCT_COLORS.PROD_ID
+----
