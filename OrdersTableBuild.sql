@@ -16,7 +16,7 @@ use database FIVETRAN_DB;
 --      SOURCE VARCHAR(100) NULL
 --         )
 -- As
-    --Inventory Table Build
+--Inventory Table Build
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
@@ -31,7 +31,7 @@ WITH RECURSIVE
                                    ORDER_HISTORY.discount,
                                    ORDER_HISTORY.total_discount,
                                    ORDER_HISTORY.total_quantity,
-                                   ROW_NUMBER() OVER (PARTITION BY ORDER_HISTORY.ID ORDER BY ORDER_HISTORY.UPDATED_TIME desc) as InventoryRowNumber
+                                   ROW_NUMBER() OVER (PARTITION BY ORDER_HISTORY.ID ORDER BY ORDER_HISTORY.UPDATED_TIME desc) as OrderRowNumber
                             from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_HISTORY)
    -- Assigns row numbers to to get values over time
    , cteLightspeedorderlines AS (Select ORDER_LINE_HISTORY.id,
@@ -42,13 +42,25 @@ WITH RECURSIVE
                                         ORDER_LINE_HISTORY.price,
                                         ORDER_LINE_HISTORY.original_price,
                                         ORDER_LINE_HISTORY.quantity,
-                                            ROW_NUMBER() OVER (PARTITION BY ORDER_LINE_HISTORY.ID, ORDER_ID ORDER BY ORDER_LINE_HISTORY.UPDATED_TIME desc) as InventoryRowNumber
+                                        ROW_NUMBER() OVER (PARTITION BY ORDER_LINE_HISTORY.ID, ORDER_LINE_HISTORY.ORDER_ID ORDER BY ORDER_LINE_HISTORY.UPDATED_TIME desc) as OrderlineRownumber
                                  from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_LINE_HISTORY)
    -- this table combines the two above and then filters to only rownumber 1 to get the Most recent value in a given day.
-   , ctelightspeedcombined as (Select *
+   , ctelightspeedcombined as (Select ctelightspeedorders.id,
+                                      shop_id,
+                                      ordered_date,
+                                      received_date,
+                                      arrival_date,
+                                      item_id,
+                                      price,
+                                      original_price,
+                                      discount,
+                                      quantity
+                                          total
                                from ctelightspeedorders
                                         join cteLightspeedorderlines
-                                             on ctelightspeedorders.ID = cteLightspeedorderlines.ID)
+                                             on ctelightspeedorders.ID = cteLightspeedorderlines.ID
+                                                 and ctelightspeedorders.OrderRowNumber = 1
+                                                 and cteLightspeedorderlines.OrderlineRownumber = 1)
 ---- /// YANDY /// ----
    -- Assigns row numbers to multiple inventory moves per day
    , cteyandyorders as (select returned, --boolean true or false
@@ -62,13 +74,15 @@ WITH RECURSIVE
                                tax,
                                total_prod_price
                         from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS)
-   , cteYandyInventoryHistoryPrep AS ()
-   , cteyandyinventorycombined as ()
+--    , cteYandyInventoryHistoryPrep AS ()
+--    , cteyandyinventorycombined as ()
 
 
 ---//// WHERE IT ALL COMBINES ////---
 -- the intent here is to take all the relevant cte's above and combine them through unions to make one conjoined inventory table.
 -- This methodology will be followed for all tables.
+
+
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
 Select inventorydate                     as Date,
