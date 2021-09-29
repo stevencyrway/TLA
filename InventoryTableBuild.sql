@@ -1,5 +1,5 @@
 use warehouse COMPUTE_WH;
-use database PROD_TLA_DW
+use database PROD_TLA_DW;
 
 --To create the table
 CREATE OR REPLACE TABLE PROD_TLA_DW.public.INVENTORY_FACT
@@ -28,6 +28,7 @@ WITH RECURSIVE
                                  to_date(UPDATED_TIME)                                          as ItemDate,
                                  CUSTOM_SKU,
                                  AVG_COST,
+                                 DESCRIPTION,
                                  ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as RowNumber
                           FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.ITEM_HISTORY)
    -- Assigns row numbers to to get values over time
@@ -48,7 +49,8 @@ WITH RECURSIVE
                                       category_id,
                                       InventoryDate                    as Date,
                                       custom_sku,
-                                      AVG_COST as Cost
+                                      AVG_COST as Cost,
+                                      DESCRIPTION
                                from cteLightspeedInventory
                                         left outer join ctelightspeedItem
                                                         on cteLightspeedInventory.ITEM_ID = ctelightspeedItem.ID
@@ -56,6 +58,9 @@ WITH RECURSIVE
                                  and cteLightspeedInventory.RowNumber = 1)
 ---- /// YANDY /// ----
    -- Assigns row numbers to multiple inventory moves per day
+   , cteyandyproductname as (select PROD_ID, PROD_NAME
+                            from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
+                            group by PROD_ID, PROD_NAME)
    , cteyandycategoryjoin as (Select PROD_ID,
                                      PRODUCTS.ptype,
                                      PRODUCTS.n2,
@@ -86,11 +91,13 @@ WITH RECURSIVE
                                           cteYandyProducts.prod_option_id,
                                           CategoryID,
                                           option_sku,
+                                          PROD_NAME,
                                           cteyandyavgcost.Cost
                                    from cteYandyInventoryHistoryPrep
                                             join cteYandyProducts on PROD_OPTION_ID = OPTION_ID
                                             join cteyandyavgcost on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
                                             join cteyandycategoryjoin on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
+                                            join cteyandyproductname on cteYandyProducts.PROD_ID = cteyandyproductname.PROD_ID ---Need to confirm this join doesn't duplicate anything still 09/29/2021
                                    where InventoryRowNumber = 1)
 
 
@@ -99,7 +106,8 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select inventorydate            as Date,
+Select prod_name as productname,
+       inventorydate            as Date,
        option_sku               as SKU,
        concat('Yandy', to_varchar(UUID)) as UUID,
        QOH,
@@ -114,7 +122,8 @@ from cteyandyinventorycombined
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select Date,
+Select description as Productname,
+       Date,
        custom_sku                  as SKU,
        concat(to_varchar(ITEM_ID), 'LoversLightspeed') as UUID,
        QOH,
