@@ -113,14 +113,44 @@ from cteyandyinventorycombined
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select inventorydate            as Date,
+Select null          as SoldDate,
        option_sku               as SKU,
        concat('Yandy', to_varchar(UUID)) as UUID,
        null as QTY_SOLD,
        null as Price,
-       null as Discount_Amount
+       null as Discount_Amount,
        null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
        CategoryID               as CategoryID,
-       'LoversLightspeed'          as Source
+       'LoversLightspeed'       as Source
 from ctelightspeedcombined;
 
+
+select
+       returned,
+       order_date,
+       backorder_date,
+       prod_id,
+       net_price,
+       option_sku,
+       option_color,
+       amazon_id,
+       option_style,
+       order_id,
+       tax,
+       option_size,
+       misship,
+       option_id,
+
+       prod_name,
+       brand_code,
+       prod_price,
+       total_prod_price,
+       returned_date,
+       reviewed,
+       prod_sku,
+       discount_group_id,
+       to_dropship,
+       discount_percent,
+       quantity,
+       wholesale_price,
+from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
