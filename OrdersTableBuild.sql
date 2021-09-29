@@ -3,22 +3,20 @@ use database PROD_TLA_DW
 
 --To create the table
 CREATE OR REPLACE TABLE PROD_TLA_DW.public.INVENTORY_FACT
-(
-    DATE       DATE          NOT NULL,
-    SKU        VARCHAR(255)  NULL,
-    UUID       VARCHAR(255)  NULL,
-    QOH        SMALLINT      NULL,
-    BACKORDER  SMALLINT      NULL,
-    COST       DECIMAL(6, 2) NULL,
-    ITEMID     VARCHAR(50)   NULL,
-    LOCATIONID VARCHAR(50)   Null,
-    CATEGORYID VARCHAR(100)  NULL,
-    SOURCE     VARCHAR(100)  NULL
-)
-
+    (
+     DATE DATE NOT NULL,
+     SKU VARCHAR(255) NULL,
+     UUID VARCHAR(255) NULL,
+     QOH SMALLINT NULL,
+     BACKORDER SMALLINT NULL,
+     COST DECIMAL(6, 2) NULL,
+     ITEMID VARCHAR(50) NULL,
+     LOCATIONID VARCHAR(50) Null,
+     CATEGORYID VARCHAR(100) NULL,
+     SOURCE VARCHAR(100) NULL
+        )
 As
-
---Inventory Table Build
+    --Inventory Table Build
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
@@ -48,7 +46,7 @@ WITH RECURSIVE
                                       category_id,
                                       InventoryDate                    as Date,
                                       custom_sku,
-                                      AVG_COST as Cost
+                                      AVG_COST                         as Cost
                                from cteLightspeedInventory
                                         left outer join ctelightspeedItem
                                                         on cteLightspeedInventory.ITEM_ID = ctelightspeedItem.ID
@@ -89,8 +87,10 @@ WITH RECURSIVE
                                           cteyandyavgcost.Cost
                                    from cteYandyInventoryHistoryPrep
                                             join cteYandyProducts on PROD_OPTION_ID = OPTION_ID
-                                            join cteyandyavgcost on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
-                                            join cteyandycategoryjoin on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
+                                            join cteyandyavgcost
+                                                 on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
+                                            join cteyandycategoryjoin
+                                                 on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
                                    where InventoryRowNumber = 1)
 
 
@@ -99,13 +99,12 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select inventorydate            as Date,
-       option_sku               as SKU,
+Select inventorydate                     as Date,
+       option_sku                        as SKU,
        concat('Yandy', to_varchar(UUID)) as UUID,
-       null as QTY_SOLD,
-       null as Price,
-       null as Discount_Amount
-       null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       null                              as QTY_SOLD,
+       null                              as Price,
+       null                              as Discount_Amount null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
        CategoryID               as CategoryID,
        'Yandy'                  as Source
 from cteyandyinventorycombined
@@ -113,44 +112,67 @@ from cteyandyinventorycombined
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select null          as SoldDate,
-       option_sku               as SKU,
+Select null                              as SoldDate,
+       option_sku                        as SKU,
        concat('Yandy', to_varchar(UUID)) as UUID,
-       null as QTY_SOLD,
-       null as Price,
-       null as Discount_Amount,
-       null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       CategoryID               as CategoryID,
-       'LoversLightspeed'       as Source
+       null                              as QTY_SOLD,
+       null                              as Price,
+       null                              as Discount_Amount,
+       null                              as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       CategoryID                        as CategoryID,
+       'LoversLightspeed'                as Source
 from ctelightspeedcombined;
 
-
-select
-       returned,
+---Yandy Orders
+select returned,  --boolean true or false
+       order_id,
        order_date,
        backorder_date,
+       prod_name, --should be added to item table but need to find where
        prod_id,
-       net_price,
-       option_sku,
-       option_color,
-       amazon_id,
-       option_style,
-       order_id,
-       tax,
-       option_size,
-       misship,
        option_id,
-
-       prod_name,
-       brand_code,
-       prod_price,
-       total_prod_price,
-       returned_date,
-       reviewed,
-       prod_sku,
-       discount_group_id,
-       to_dropship,
-       discount_percent,
        quantity,
-       wholesale_price,
+       discount_percent,
+       tax,
+       total_prod_price
 from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
+
+
+Select ORDER_HISTORY.id,
+       ORDER_HISTORY.updated_time,
+       ORDER_HISTORY.vendor_id,
+       ORDER_HISTORY.shop_id,
+       ORDER_HISTORY.ordered_date,
+       ORDER_HISTORY.received_date,
+       ORDER_HISTORY.arrival_date,
+       ORDER_HISTORY.ship_instructions,
+       ORDER_HISTORY.stock_instructions,
+       ORDER_HISTORY.ship_cost,
+       ORDER_HISTORY.other_cost,
+       ORDER_HISTORY.complete,
+       ORDER_HISTORY.archived,
+       ORDER_HISTORY.discount,
+       ORDER_HISTORY.total_discount,
+       ORDER_HISTORY.total_quantity,
+       ORDER_HISTORY.note,
+       ORDER_HISTORY.note_updated_time,
+       ORDER_HISTORY.note_is_public,
+       ORDER_HISTORY.note_id,
+       ORDER_HISTORY.reference_number,
+       ORDER_HISTORY._fivetran_synced,
+       ORDER_LINE_HISTORY.id,
+       ORDER_LINE_HISTORY.updated_time,
+       ORDER_LINE_HISTORY.order_id,
+       ORDER_LINE_HISTORY.item_id,
+       ORDER_LINE_HISTORY.total,
+       ORDER_LINE_HISTORY.price,
+       ORDER_LINE_HISTORY.original_price,
+       ORDER_LINE_HISTORY.checked_in,
+       ORDER_LINE_HISTORY.num_received,
+       ORDER_LINE_HISTORY.quantity,
+       ORDER_LINE_HISTORY._fivetran_synced,
+        ROW_NUMBER() OVER (PARTITION BY ORDER_LINE_HISTORY.ID,to_date(ORDER_LINE_HISTORY.UPDATED_TIME) ORDER BY ORDER_LINE_HISTORY.UPDATED_TIME DESC) as InventoryRowNumber
+from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_HISTORY
+         join FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_LINE_HISTORY
+              on ORDER_HISTORY.ID = ORDER_LINE_HISTORY.ID
+where ORDER_HISTORY.ID = 4323
