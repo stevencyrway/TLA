@@ -2,20 +2,19 @@ use warehouse COMPUTE_WH;
 use database FIVETRAN_DB;
 
 --To create the table
--- CREATE OR REPLACE TABLE PROD_TLA_DW.public.INVENTORY_FACT
---     (
---      DATE DATE NOT NULL,
---      SKU VARCHAR(255) NULL,
---      UUID VARCHAR(255) NULL,
---      QOH SMALLINT NULL,
---      BACKORDER SMALLINT NULL,
---      COST DECIMAL(6, 2) NULL,
---      ITEMID VARCHAR(50) NULL,
---      LOCATIONID VARCHAR(50) Null,
---      CATEGORYID VARCHAR(100) NULL,
---      SOURCE VARCHAR(100) NULL
---         )
--- As
+CREATE OR REPLACE TABLE FIVETRAN_DB.public.INVENTORY_FACT
+    (
+     DATE DATE NOT NULL,
+     ITEMID VARCHAR(255) NULL,
+     UUID VARCHAR(255) NULL,
+     QTY_SOLD SMALLINT NULL,
+     PRICE DECIMAL(6, 2) NULL,
+     DISCOUNT DECIMAL(6, 2) NULL,
+     LOCATIONID VARCHAR(50) NUll,
+     SOURCE VARCHAR(100) NULL
+        )
+As
+
 --Inventory Table Build
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
@@ -46,16 +45,14 @@ WITH RECURSIVE
                                  from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_LINE_HISTORY)
    -- this table combines the two above and then filters to only rownumber 1 to get the Most recent value in a given day.
    , ctelightspeedcombined as (Select ctelightspeedorders.id,
-                                      shop_id,
-                                      ordered_date,
-                                      received_date,
-                                      arrival_date,
-                                      item_id,
-                                      price,
-                                      original_price,
-                                      discount,
-                                      quantity
-                                          total
+                                      cteLightspeedorders.shop_id,
+                                      ctelightspeedorders.ordered_date, --Table also has Received and arrival date that may be useful later.
+                                      cteLightspeedorderlines.item_id,
+                                      cteLightspeedorderlines.price,
+                                      cteLightspeedorderlines.original_price,
+                                      cteLightspeedorders.discount,
+                                      cteLightspeedorderlines.quantity,
+                                      cteLightspeedorderlines.total
                                from ctelightspeedorders
                                         join cteLightspeedorderlines
                                              on ctelightspeedorders.ID = cteLightspeedorderlines.ID
@@ -83,30 +80,28 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 
 
-
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select inventorydate                     as Date,
-       option_sku                        as SKU,
-       concat('Yandy', to_varchar(UUID)) as UUID,
-       null                              as QTY_SOLD,
-       null                              as Price,
-       null                              as Discount_Amount null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       CategoryID               as CategoryID,
-       'Yandy'                  as Source
-from cteyandyinventorycombined
+Select to_date(ORDER_DATE)                                as Date,
+       CONCAT(to_varchar(PROD_ID), to_varchar(OPTION_ID)) as ItemID,
+       null                                               as UUID,
+       QUANTITY                                           as QTY_SOLD,
+       TOTAL_PROD_PRICE                                   as Price,
+       DISCOUNT_PERCENT                                   as Discount_Amount,
+       null                                               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       'Yandy'                                            as Source
+from cteyandyorders
 
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select null                              as SoldDate,
-       option_sku                        as SKU,
-       concat('Yandy', to_varchar(UUID)) as UUID,
-       null                              as QTY_SOLD,
-       null                              as Price,
-       null                              as Discount_Amount,
-       null                              as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       CategoryID                        as CategoryID,
-       'LoversLightspeed'                as Source
+Select to_date(ORDERED_DATE) as SoldDate,
+       to_varchar(ITEM_ID)   as ItemID,
+       null                  as UUID,
+       QUANTITY              as QTY_SOLD,
+       PRICE                 as Price,
+       DISCOUNT              as Discount_Amount,
+       SHOP_ID               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       'LoversLightspeed'    as Source
 from ctelightspeedcombined;
 
 
