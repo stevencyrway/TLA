@@ -69,7 +69,8 @@ WITH RECURSIVE
                                quantity,
                                discount_percent,
                                tax,
-                               total_prod_price
+                               total_prod_price,
+                               SITE_ID
                         from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS)
 --    , cteYandyInventoryHistoryPrep AS ()
 --    , cteyandyinventorycombined as ()
@@ -81,14 +82,14 @@ WITH RECURSIVE
 
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select to_date(ORDER_DATE)                                as Date,
-       CONCAT(to_varchar(PROD_ID), to_varchar(OPTION_ID)) as ItemID,
-       null                                               as UUID,
-       QUANTITY                                           as QTY_SOLD,
-       TOTAL_PROD_PRICE                                   as Price,
-       DISCOUNT_PERCENT                                   as Discount_Amount,
-       null                                               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       'Yandy'                                            as Source
+Select to_date(ORDER_DATE)                                     as Date,
+       CONCAT(to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemID,
+       ORDER_ID                                                as UUID,
+       QUANTITY                                                as QTY_SOLD,
+       TOTAL_PROD_PRICE                                        as Price,
+       DISCOUNT_PERCENT                                        as Discount_Amount,
+       null                                                    as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       'Yandy'                                                 as Source
 from cteyandyorders
 
 union all
@@ -96,13 +97,14 @@ union all
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
 Select to_date(ORDERED_DATE) as SoldDate,
        to_varchar(ITEM_ID)   as ItemID,
-       null                  as UUID,
+       ID                    as UUID,       --Order ID
        QUANTITY              as QTY_SOLD,
        PRICE                 as Price,
        DISCOUNT              as Discount_Amount,
        SHOP_ID               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
        'LoversLightspeed'    as Source
 from ctelightspeedcombined;
+
 
 
 
