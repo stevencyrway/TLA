@@ -22,7 +22,7 @@ WITH RECURSIVE
                                  ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as RowNumber
                           FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.SHOP_HISTORY)
 ---- /// YANDY /// ----
-   -- I haven't found a location table that has data in Yandy.
+   -- I haven't found a location table that has data in Yandy
 --    , cteyandybrands as ()
 --    , cteyandyinventorycombined as ()
 
