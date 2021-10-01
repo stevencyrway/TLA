@@ -19,12 +19,12 @@ WITH RECURSIVE
                                  updated_time,
                                  name,
                                  time_zone,
-                                 ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as RowNumber
+                                 ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as LocationRowNumber
                           FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.SHOP_HISTORY)
 ---- /// YANDY /// ----
    -- I haven't found a location table that has data in Yandy
 --    , cteyandybrands as ()
---    , cteyandyinventorycombined as ()
+   , cteyandyinventorycombined as (Select location_id, location_name, _fivetran_deleted, _fivetran_synced from FIVETRAN_DB.POSTGRES_PUBLIC.LOCATIONS)
 
 
 ---//// WHERE IT ALL COMBINES ////---
@@ -44,7 +44,8 @@ Select ID           as LocationID,
        NAME         as LocationName,
        TIME_ZONE    as Timezone,
        'Lightspeed' as Source
-from ctelightspeedlocation;
+from ctelightspeedlocation
+where LocationRowNumber = 1
 
 
 
