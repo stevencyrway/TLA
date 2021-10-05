@@ -106,12 +106,11 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select prod_name as productname,
-       inventorydate            as Date,
+Select inventorydate            as Date,
        option_sku               as SKU,
        concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,
        QOH,
-       Null                     as Backordered,
+       Null                     as Backorder,
        Cost,
        prod_option_id           as ItemID,
        null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
@@ -122,12 +121,11 @@ from cteyandyinventorycombined
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select description as Productname,
-       Date,
+Select Date,
        custom_sku                  as SKU,
        concat('Lightspeed', '/', ITEM_ID)  as UUID,
        QOH,
-       backorder,
+       Backorder,
        Cost                        as Cost, --Need to add this in upstream table
        item_id                     as ItemID,
        shop_id                     as LocationID,
