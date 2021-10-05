@@ -23,7 +23,7 @@ WITH RECURSIVE
 ---- /// Lightspeed /// ----
    -- Assigns row numbers to to get values over time and identify when more than value occurs in a day.
     ctelightspeedItem AS (Select ID,
-                                 concat('Lightspeed', '/', CUSTOM_SKU)                          as UUID,
+                                 concat('Lightspeed', '/', ID)                          as UUID,
                                  CUSTOM_SKU,
                                  to_varchar(MANUFACTURER_ID)                                    as ManufacturerID,
                                  DEFAULT_VENDOR_ID                                              as VendorID,

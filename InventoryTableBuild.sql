@@ -1,8 +1,8 @@
 use warehouse COMPUTE_WH;
-use database PROD_TLA_DW;
+use database FIVETRAN_DB;
 
 --To create the table
-CREATE OR REPLACE TABLE PROD_TLA_DW.public.INVENTORY_FACT
+CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.INVENTORY_FACT
 (
     DATE       DATE          NOT NULL,
     SKU        VARCHAR(255)  NULL,
@@ -109,7 +109,7 @@ WITH RECURSIVE
 Select prod_name as productname,
        inventorydate            as Date,
        option_sku               as SKU,
-       concat('Yandy', to_varchar(UUID)) as UUID,
+       concat(to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,
        QOH,
        Null                     as Backordered,
        Cost,
@@ -125,7 +125,7 @@ union all
 Select description as Productname,
        Date,
        custom_sku                  as SKU,
-       concat(to_varchar(ITEM_ID), 'LoversLightspeed') as UUID,
+       concat('Lightspeed', '/', ITEM_ID)  as UUID,
        QOH,
        backorder,
        Cost                        as Cost, --Need to add this in upstream table
