@@ -109,7 +109,7 @@ WITH RECURSIVE
 Select prod_name as productname,
        inventorydate            as Date,
        option_sku               as SKU,
-       concat(to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,
+       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,
        QOH,
        Null                     as Backordered,
        Cost,

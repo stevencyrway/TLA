@@ -83,7 +83,7 @@ WITH RECURSIVE
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
 Select to_date(ORDER_DATE)                                     as Date,
-       CONCAT(to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemID,
+       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemID, --UUID for Item Dim Table
        ORDER_ID                                                as UUID,
        QUANTITY                                                as QTY_SOLD,
        TOTAL_PROD_PRICE                                        as Price,
@@ -96,7 +96,7 @@ union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
 Select to_date(ORDERED_DATE) as SoldDate,
-       to_varchar(ITEM_ID)   as ItemID,
+       concat('Lightspeed', '/', ITEM_ID)   as ItemID, --UUID for Item dim Table
        ID                    as UUID,       --Order ID
        QUANTITY              as QTY_SOLD,
        PRICE                 as Price,
