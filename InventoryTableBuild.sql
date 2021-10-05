@@ -130,6 +130,6 @@ Select Date,
        item_id                     as ItemID,
        shop_id                     as LocationID,
        to_varchar(category_id)     as CategoryID,
-       'LoversLightspeed'          as Source
+       'Lightspeed'          as Source
 from ctelightspeedcombined;
 
