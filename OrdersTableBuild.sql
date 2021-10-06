@@ -5,8 +5,8 @@ use database FIVETRAN_DB;
 CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.ORDER_FACT
     (
      DATE DATE NULL,
-     ITEMID VARCHAR(255) NULL,
-     UUID VARCHAR(255) NULL,
+     ITEMUUID VARCHAR(255) NULL,
+     OrderUUID VARCHAR(255) NULL,
      QTY_SOLD SMALLINT NULL,
      PRICE DECIMAL(10, 2) NULL,
      DISCOUNT NUMBER NULL,
@@ -82,27 +82,27 @@ WITH RECURSIVE
 
 
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
-Select to_date(ORDER_DATE)                                     as Date,
-       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemID, --UUID for Item Dim Table
-       ORDER_ID                                                as UUID,
-       QUANTITY                                                as QTY_SOLD,
-       TOTAL_PROD_PRICE                                        as Price,
-       DISCOUNT_PERCENT                                        as Discount_Amount,
-       null                                                    as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       'Yandy'                                                 as Source
+Select to_date(ORDER_DATE)                                                   as Date,
+       concat('Yandy', '/', to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemUUID,   --UUID for Item Dim Table
+       to_varchar(ORDER_ID)                                                  as OrderUUID,
+       QUANTITY                                                              as QTY_SOLD,
+       TOTAL_PROD_PRICE                                                      as Price,
+       DISCOUNT_PERCENT                                                      as Discount_Amount,
+       null                                                                  as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       'Yandy'                                                               as Source
 from cteyandyorders
 
 union all
 
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
-Select to_date(ORDERED_DATE) as SoldDate,
-       concat('Lightspeed', '/', ITEM_ID)   as ItemID, --UUID for Item dim Table
-       ID                    as UUID,       --Order ID
-       QUANTITY              as QTY_SOLD,
-       PRICE                 as Price,
-       DISCOUNT              as Discount_Amount,
-       SHOP_ID               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       'LoversLightspeed'    as Source
+Select to_date(ORDERED_DATE)              as SoldDate,
+       concat('Lightspeed', '/', ITEM_ID) as ItemUUID,   --UUID for Item dim Table
+       to_varchar(ID)                     as OrderUUID,  --Order ID
+       QUANTITY                           as QTY_SOLD,
+       PRICE                              as Price,
+       DISCOUNT                           as Discount_Amount,
+       SHOP_ID                            as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       'LoversLightspeed'                 as Source
 from ctelightspeedcombined;
 
 
