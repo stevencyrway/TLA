@@ -6,11 +6,10 @@ CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.INVENTORY_FACT
 (
     DATE       DATE          NOT NULL,
     SKU        VARCHAR(255)  NULL,
-    UUID       VARCHAR(255)  NULL,
+    ITEMUUID   VARCHAR(255)  NULL,
     QOH        SMALLINT      NULL,
     BACKORDER  SMALLINT      NULL,
     COST       DECIMAL(6, 2) NULL,
-    ITEMID     VARCHAR(50)   NULL,
     LOCATIONID VARCHAR(50)   Null,
     CATEGORYID VARCHAR(100)  NULL,
     SOURCE     VARCHAR(100)  NULL
@@ -108,11 +107,10 @@ WITH RECURSIVE
 -- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
 Select inventorydate            as Date,
        option_sku               as SKU,
-       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,
+       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
        QOH,
        Null                     as Backorder,
        Cost,
-       prod_option_id           as ItemID,
        null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
        CategoryID               as CategoryID,
        'Yandy'                  as Source
@@ -123,11 +121,10 @@ union all
 -- Lightspeed Completed Inventory Fact Details, this is missing cost.
 Select Date,
        custom_sku                  as SKU,
-       concat('Lightspeed', '/', ITEM_ID)  as UUID,
+       concat('Lightspeed', '/', ITEM_ID)  as ItemUUID,
        QOH,
        Backorder,
        Cost                        as Cost, --Need to add this in upstream table
-       item_id                     as ItemID,
        shop_id                     as LocationID,
        to_varchar(category_id)     as CategoryID,
        'Lightspeed'          as Source

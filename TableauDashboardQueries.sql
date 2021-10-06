@@ -11,16 +11,15 @@ cteinventoryDateLead as (Select *,
                                 Lead(if.DATE) OVER (ORDER BY if.DATE desc) as PreviousRecordDate
                          from FIVETRAN_DB.prod.INVENTORY_FACT IF
                          where if.date >= '2021-09-01'
-                           and if.UUID = 'Lightspeed/3862'
+                           and if.ITEMUUID = 'Lightspeed/3862'
                             and LOCATIONID = '35')
         ,
 cteinventoryLeadDayAdd as (Select date,
                                   sku,
-                                  uuid,
+                                  ITEMUUID,
                                   qoh,
                                   backorder,
                                   cost,
-                                  itemid,
                                   locationid,
                                   categoryid,
                                   source,
@@ -36,5 +35,5 @@ from FIVETRAN_DB.prod.DATE_DIMENSION DD
                          on DD.DATE >= LDA.StartRecordDate
                         and DD.Date <= lda.DATE
         join FIVETRAN_DB.PROD.ITEM_DIM ID
-        on lda.UUID = id.UUID;
+        on lda.ITEMUUID = id.UUID;
 
