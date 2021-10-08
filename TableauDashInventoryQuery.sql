@@ -1,6 +1,6 @@
 use warehouse COMPUTE_WH;
 
-create or replace view FIVETRAN_DB.prod.InventoryView as
+-- create or replace view FIVETRAN_DB.prod.InventoryView as
 
 ---concat('Lightspeed', '/', ITEM_ID)  as UUID,
 ---concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as UUID,

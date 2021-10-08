@@ -3,63 +3,38 @@ use database FIVETRAN_DB;
 
 --To create the table
 CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.INVENTORY_FACT
-(
-    DATE       DATE          NOT NULL,
-    SKU        VARCHAR(255)  NULL,
-    ITEMUUID   VARCHAR(255)  NULL,
-    QOH        SMALLINT      NULL,
-    BACKORDER  SMALLINT      NULL,
-    COST       DECIMAL(6, 2) NULL,
-    LOCATIONID VARCHAR(50)   Null,
-    CATEGORYID VARCHAR(100)  NULL,
-    SOURCE     VARCHAR(100)  NULL
-)
-
+    (
+     DATE DATE NOT NULL,
+     SKU VARCHAR(255) NULL,
+     ITEMUUID VARCHAR(255) NULL,
+     QOH SMALLINT NULL,
+     BACKORDER SMALLINT NULL,
+     COST DECIMAL(6, 2) NULL,
+     LOCATIONID VARCHAR(50) Null,
+     CATEGORYID VARCHAR(100) NULL,
+     SOURCE VARCHAR(100) NULL
+        )
 As
-
---Inventory Table Build
+    --Inventory Table Build
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
-   -- Assigns row numbers to to get values over time and identify when more than value occurs in a day.
-    ctelightspeedItem AS (Select id,
-                                 CATEGORY_ID,
-                                 to_date(UPDATED_TIME)                                          as ItemDate,
-                                 CUSTOM_SKU,
-                                 AVG_COST,
-                                 DESCRIPTION,
-                                 ROW_NUMBER() OVER (PARTITION BY ID ORDER BY UPDATED_TIME DESC) as RowNumber
-                          FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.ITEM_HISTORY)
-   -- Assigns row numbers to to get values over time
-   , cteLightspeedInventory AS (Select to_date(UPDATED_TIME)                                                                                   as InventoryDate,
-                                       item_id,
-                                       shop_id,
-                                       qoh,
-                                       backorder,
-                                       ROW_NUMBER() OVER (PARTITION BY ID, ITEM_ID, SHOP_ID, to_date(UPDATED_TIME) ORDER BY UPDATED_TIME DESC) as RowNumber
-                                FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.ITEM_SHOP_HISTORY)
-   -- this table combines the two above and then filters to only rownumber 1 to get the Most recent value in a given day.
-   , ctelightspeedcombined as (Select item_id,
-                                      shop_id,
+-- Assigns row numbers to to get values over time and identify when more than value occurs in a day.
+    ctelightspeedcombined as (Select  VALUELASTUPDATEDVDATE,
+                                      insertdate,
+                                      sku,
+                                      itemuuid,
                                       qoh,
                                       backorder,
-                                      cteLightspeedInventory.rownumber as RN,
-                                      id,
-                                      category_id,
-                                      InventoryDate                    as Date,
-                                      custom_sku,
-                                      AVG_COST as Cost,
-                                      DESCRIPTION
-                               from cteLightspeedInventory
-                                        left outer join ctelightspeedItem
-                                                        on cteLightspeedInventory.ITEM_ID = ctelightspeedItem.ID
-                               where ctelightspeedItem.RowNumber = 1
-                                 and cteLightspeedInventory.RowNumber = 1)
+                                      cost,
+                                      locationid,
+                                      categoryid
+                               from FIVETRAN_DB.PROD.LIGHTSPEED_INVENTORY_HISTORY)
 ---- /// YANDY /// ----
    -- Assigns row numbers to multiple inventory moves per day
    , cteyandyproductname as (select PROD_ID, PROD_NAME
-                            from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
-                            group by PROD_ID, PROD_NAME)
+                             from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
+                             group by PROD_ID, PROD_NAME)
    , cteyandycategoryjoin as (Select PROD_ID,
                                      PRODUCTS.ptype,
                                      PRODUCTS.n2,
@@ -94,9 +69,12 @@ WITH RECURSIVE
                                           cteyandyavgcost.Cost
                                    from cteYandyInventoryHistoryPrep
                                             join cteYandyProducts on PROD_OPTION_ID = OPTION_ID
-                                            join cteyandyavgcost on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
-                                            join cteyandycategoryjoin on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
-                                            join cteyandyproductname on cteYandyProducts.PROD_ID = cteyandyproductname.PROD_ID ---Need to confirm this join doesn't duplicate anything still 09/29/2021
+                                            join cteyandyavgcost
+                                                 on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
+                                            join cteyandycategoryjoin
+                                                 on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
+                                            join cteyandyproductname
+                                                 on cteYandyProducts.PROD_ID = cteyandyproductname.PROD_ID ---Need to confirm this join doesn't duplicate anything still 09/29/2021
                                    where InventoryRowNumber = 1)
 
 
@@ -104,48 +82,29 @@ WITH RECURSIVE
 -- the intent here is to take all the relevant cte's above and combine them through unions to make one conjoined inventory table.
 -- This methodology will be followed for all tables.
 
-
-
-
-
-
-select FIFO_LEDGER.prod_option_id, FIFO_LEDGER.
-                                avg(FIFO_LEDGER.cost_price) as Cost
-                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER ---Need to add date to this calculation. this table contains historical costs received.
-                         group by PROD_OPTION_ID
-
-
-
-Select * from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER
-
-
-
-
-
-
 -- Yandy
-Select inventorydate            as Date,
-       option_sku               as SKU,
-       concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
+Select inventorydate                                                              as Date,
+       option_sku                                                                 as SKU,
+       concat('Yandy', '/', to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
        QOH,
-       Null                     as Backorder,
+       Null                                                                       as Backorder,
        Cost,
-       null                     as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       CategoryID               as CategoryID,
-       'Yandy'                  as Source
+       null                                                                       as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       CategoryID                                                                 as CategoryID,
+       'Yandy'                                                                    as Source
 from cteyandyinventorycombined
 
 union all
 
 -- Lightspeed
-Select Date,
-       custom_sku                  as SKU,
-       concat('Lightspeed', '/', ITEM_ID)  as ItemUUID,
+Select INSERTDATE                    as Date,
+       SKU                                as SKU,
+       concat('Lightspeed', '/', ITEMUUID) as ItemUUID,
        QOH,
        Backorder,
-       Cost                        as Cost, --Need to add this in upstream table
-       shop_id                     as LocationID,
-       to_varchar(category_id)     as CategoryID,
-       'Lightspeed'          as Source
+       Cost                               as Cost, --Need to add this in upstream table
+       LOCATIONID                         as LocationID,
+       to_varchar(categoryid)             as CategoryID,
+       'Lightspeed'                       as Source
 from ctelightspeedcombined;
 

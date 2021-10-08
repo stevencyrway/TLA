@@ -66,3 +66,8 @@ group by SOURCE
 
 select SOURCE from FIVETRAN_DB.PROD.ITEM_DIM
 group by SOURCE
+
+Select count(ITEMUUID) from FIVETRAN_DB.PROD.INVENTORYVIEW
+where source = 'Lightspeed'
+
+Select count()
