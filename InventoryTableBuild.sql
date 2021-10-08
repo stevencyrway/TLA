@@ -79,7 +79,7 @@ WITH RECURSIVE
                           from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po)
    , cteyandyavgcost as (select FIFO_LEDGER.prod_option_id,
                                 avg(FIFO_LEDGER.cost_price) as Cost
-                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER
+                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER ---Need to add date to this calculation. this table contains historical costs received.
                          group by PROD_OPTION_ID)
    , cteyandyinventorycombined as (Select inventorydate,
                                           option_id,
@@ -104,7 +104,26 @@ WITH RECURSIVE
 -- the intent here is to take all the relevant cte's above and combine them through unions to make one conjoined inventory table.
 -- This methodology will be followed for all tables.
 
--- First attempt at Yandy Inventory table, need to add cost next from FIFO ledger
+
+
+
+
+
+select FIFO_LEDGER.prod_option_id, FIFO_LEDGER.
+                                avg(FIFO_LEDGER.cost_price) as Cost
+                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER ---Need to add date to this calculation. this table contains historical costs received.
+                         group by PROD_OPTION_ID
+
+
+
+Select * from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER
+
+
+
+
+
+
+-- Yandy
 Select inventorydate            as Date,
        option_sku               as SKU,
        concat('Yandy','/',to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
@@ -118,7 +137,7 @@ from cteyandyinventorycombined
 
 union all
 
--- Lightspeed Completed Inventory Fact Details, this is missing cost.
+-- Lightspeed
 Select Date,
        custom_sku                  as SKU,
        concat('Lightspeed', '/', ITEM_ID)  as ItemUUID,

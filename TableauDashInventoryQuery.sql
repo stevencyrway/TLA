@@ -52,8 +52,8 @@ from FIVETRAN_DB.prod.DATE_DIM DD
          join cteinventoryLeadDayAdd LDA
               on DD.DATE >= LDA.StartRecordDate
                   and DD.Date <= lda.DATE
-         join FIVETRAN_DB.PROD.ITEM_DIM ID
+         LEFT OUTER join FIVETRAN_DB.PROD.ITEM_DIM ID
               on lda.ITEMUUID = id.UUID
-         join FIVETRAN_DB.prod.LOCATION_DIM LD
+         LEFT OUTER join FIVETRAN_DB.prod.LOCATION_DIM LD
               on lda.LOCATIONID = ld.LOCATIONID
 

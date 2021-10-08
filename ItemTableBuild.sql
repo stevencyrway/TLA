@@ -1,21 +1,21 @@
 use warehouse COMPUTE_WH;
 -- use database PROD_TLA_DW
 
---To create the table
-CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.ITEM_DIM
-    (SKU VARCHAR(100) NULL,
-     UUID VARCHAR(255) NOT NULL,
-     BRANDNAME VARCHAR(255) NULL,
-     VENDORID VARCHAR(255) NULL,
-     CATEGORYID VARCHAR(100) NULL,
-     DESCRIPTION VARCHAR(255) NULL,
-     COLOR VARCHAR(100) NULL,
-     SIZE VARCHAR(255) NULL,
-     ATTRIBUTE3 VARCHAR(255) NULL,
-     SOURCE VARCHAR(30) NULL
-        )
-AS
-    --Inventory Table Build
+-- --To create the table
+-- CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.ITEM_DIM
+--     (SKU VARCHAR(100) NULL,
+--      UUID VARCHAR(255) NOT NULL,
+--      BRANDNAME VARCHAR(255) NULL,
+--      VENDORID VARCHAR(255) NULL,
+--      CATEGORYID VARCHAR(100) NULL,
+--      DESCRIPTION VARCHAR(255) NULL,
+--      COLOR VARCHAR(100) NULL,
+--      SIZE VARCHAR(255) NULL,
+--      ATTRIBUTE3 VARCHAR(255) NULL,
+--      SOURCE VARCHAR(30) NULL
+--         )
+-- AS
+--Inventory Table Build
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
@@ -120,29 +120,46 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 -- Yandy Item's
 
-Select sku         as SKU,
-       UUID        as UUID,
-       BRAND_NAME  as BrandID,
-       null        as VendorID, --couldn't find any source in Yandy for this.
-       CategoryID  as CategoryID,
-       ProductName as Description,
-       COLOR_NAME  as Color,
-       SIZE_TYPE   as Size,
-       null        as Attribute3,
-       'Yandy'     as Source
-from cteyandyinventorycombined
+select count(po.PROD_ID),
+       count(distinct po.PROD_ID),
+       count(po.PROD_OPTION_ID),
+       count(distinct po.PROD_OPTION_ID)
+from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po
+         left outer join cteyandybrands B on po.PROD_ID = b.PROD_ID
+         left outer join cteyandyproductname PN on po.PROD_ID = PN.PROD_ID
+where IS_AMAZON_PRODUCT is null
 
-union all
 
--- Lightspeed Item's
-Select CUSTOM_SKU   as SKU,
-       UUID         as UUID,
-       BrandName    as BrandID,
-       VendorName   as VendorID,
-       CategoryID   as CategoryID,
-       DESCRIPTION  as Description,
-       Attribute_1  as Color,
-       Attribute_2  as Size,
-       Attribute_3  as Attribute3,
-       'Lightspeed' as Source
-from ctelightspeedcombined;
+
+Select * from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS_SITE_SPECIFIC
+
+select * from fivetran_db.POSTGRES_PUBLIC.PRODUCT_OPTIONS
+
+
+
+-- Select sku         as SKU,
+--        UUID        as UUID,
+--        BRAND_NAME  as BrandID,
+--        null        as VendorID, --couldn't find any source in Yandy for this.
+--        CategoryID  as CategoryID,
+--        ProductName as Description,
+--        COLOR_NAME  as Color,
+--        SIZE_TYPE   as Size,
+--        null        as Attribute3,
+--        'Yandy'     as Source
+-- from cteyandyinventorycombined
+
+-- union all
+--
+-- -- Lightspeed Item's
+-- Select CUSTOM_SKU   as SKU,
+--        UUID         as UUID,
+--        BrandName    as BrandID,
+--        VendorName   as VendorID,
+--        CategoryID   as CategoryID,
+--        DESCRIPTION  as Description,
+--        Attribute_1  as Color,
+--        Attribute_2  as Size,
+--        Attribute_3  as Attribute3,
+--        'Lightspeed' as Source
+-- from ctelightspeedcombined;
