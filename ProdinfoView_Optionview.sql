@@ -135,19 +135,3 @@ SELECT br.brand_name,
      LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.option_variants style ON style.variant_id = po.option_style
      LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.option_variants color ON color.variant_id = po.option_color
   ORDER BY color.name, size.variant_order;
-
-
-
-SELECT
-    Count(distinct p.prod_id),
-    count(distinct p.prod_sku),
-    count(distinct po.option_sku),
-    count(distinct po.prod_option_id)
-   FROM FIVETRAN_DB.POSTGRES_PUBLIC.product_options po
-     JOIN FIVETRAN_DB.POSTGRES_PUBLIC.products p ON p.prod_id = po.prod_id
-     LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.products_site_specific pss ON p.prod_id = pss.prod_id AND pss.site_id = 1
-     LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.product_shopify ps ON ps.id = po.prod_option_id AND ps.type::text = 'variant'::text AND ps.site_id = 1
-     JOIN FIVETRAN_DB.POSTGRES_PUBLIC.brands br ON br.brand_id = p.prod_brand
-     LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.option_variants size ON size.variant_id = po.option_size
-     LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.option_variants style ON style.variant_id = po.option_style
-     LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.option_variants color ON color.variant_id = po.option_color

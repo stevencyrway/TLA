@@ -45,29 +45,3 @@ where ORDERED_DATE is null
 select count(*) from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_HISTORY
 where ORDERED_DATE is null
 
-
-select returned, --boolean true or false
-                               order_id,
-                               to_date(order_date),
-                               backorder_date,
-                               prod_id,
-                               option_id,
-                               quantity,
-                               discount_percent,
-                               tax,
-                               total_prod_price,
-                               SITE_ID
-                        from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
-where ORDER_DATE is null
-
-
-select Source, count(UUID), count(distinct UUID, SOURCE) from FIVETRAN_DB.PROD.ITEM_DIM
-group by SOURCE
-
-select SOURCE from FIVETRAN_DB.PROD.ITEM_DIM
-group by SOURCE
-
-Select count(ITEMUUID) from FIVETRAN_DB.PROD.INVENTORYVIEW
-where source = 'Lightspeed'
-
-Select count()

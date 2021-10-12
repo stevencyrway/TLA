@@ -3,7 +3,7 @@
 --     (
 --      ROWUUID VARCHAR(255) NOT NULL PRIMARY KEY,
 --      INSERTDATE DATE NOT NULL,
---      VALUELASTUPDATEDVDATE DATE NOT NULL,
+--      VALUELASTUPDATEDDATE VARCHAR(255) NULL,
 --      SKU VARCHAR(255) NULL,
 --      ITEMUUID VARCHAR(255) NULL,
 --      QOH SMALLINT NULL,
@@ -12,8 +12,9 @@
 --      LOCATIONID VARCHAR(50) Null,
 --      CATEGORYID VARCHAR(150) NULL
 --         )
-
-Insert INTO FIVETRAN_DB.PROD.LIGHTSPEED_INVENTORY_HISTORY
+--
+-- as
+Insert INTO FIVETRAN_DB.PROD.LIGHTSPEED_INVENTORY_HISTORY (ROWUUID, INSERTDATE, VALUELASTUPDATEDDATE, SKU, ITEMUUID, QOH, BACKORDER, COST, LOCATIONID, CATEGORYID)
 
 WITH RECURSIVE
      ctelightspeedItem AS (Select id,
@@ -52,14 +53,13 @@ WITH RECURSIVE
                                  and cteLightspeedInventory.RowNumber = 1)
 
 Select ROWUUID,
-       valuelastupdateddate,
        InsertDate,
+       valuelastupdateddate,
        SKU,
        ITEMUUID,
        QOH,
        BACKORDER,
        COST,
        LOCATIONID,
-       CATEGORYID,
-       'Lightspeed' as SOURCE
+       CATEGORYID
 from ctelightspeedcombined;

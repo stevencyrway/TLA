@@ -20,7 +20,7 @@ As
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
 -- Assigns row numbers to to get values over time and identify when more than value occurs in a day.
-    ctelightspeedcombined as (Select  VALUELASTUPDATEDVDATE,
+    ctelightspeedcombined as (Select  VALUELASTUPDATEDDATE,
                                       insertdate,
                                       sku,
                                       itemuuid,
@@ -81,20 +81,20 @@ WITH RECURSIVE
 ---//// WHERE IT ALL COMBINES ////---
 -- the intent here is to take all the relevant cte's above and combine them through unions to make one conjoined inventory table.
 -- This methodology will be followed for all tables.
-
--- Yandy
-Select inventorydate                                                              as Date,
-       option_sku                                                                 as SKU,
-       concat('Yandy', '/', to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
-       QOH,
-       Null                                                                       as Backorder,
-       Cost,
-       null                                                                       as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       CategoryID                                                                 as CategoryID,
-       'Yandy'                                                                    as Source
-from cteyandyinventorycombined
-
-union all
+--
+-- -- Yandy
+-- Select inventorydate                                                              as Date,
+--        option_sku                                                                 as SKU,
+--        concat('Yandy', '/', to_varchar(PROD_ID), '/', to_varchar(PROD_OPTION_ID)) as ItemUUID,
+--        QOH,
+--        Null                                                                       as Backorder,
+--        Cost,
+--        null                                                                       as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+--        CategoryID                                                                 as CategoryID,
+--        'Yandy'                                                                    as Source
+-- from cteyandyinventorycombined
+--
+-- union all
 
 -- Lightspeed
 Select INSERTDATE                    as Date,
