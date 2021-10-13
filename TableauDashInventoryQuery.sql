@@ -44,7 +44,8 @@ Select DD.date,
        ID.color,
        ID.size,
        ID.attribute3,
-       LD.category as GeoRegion
+       LD.category as GeoRegion,
+      (LDA.cost * LDA.qoh) as InventoryDollars
 from FIVETRAN_DB.prod.DATE_DIM DD
          left outer join cteinventoryLeadDayAdd LDA
               on DD.DATE >= LDA.StartRecordDate

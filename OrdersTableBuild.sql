@@ -96,15 +96,31 @@ union all
 
 -- Lightspeed
 Select to_date(ORDERED_DATE)              as SoldDate,
-       concat('Lightspeed', '/', ITEM_ID) as ItemUUID,   --UUID for Item dim Table
+       concat('Lightspeed', '/', to_varchar(ITEM_ID)) as ItemUUID,   --UUID for Item dim Table
        to_varchar(ID)                     as OrderUUID,  --Order ID
        QUANTITY                           as QTY_SOLD,
        PRICE                              as Price,
        DISCOUNT                           as Discount_Amount,
        SHOP_ID                            as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       'LoversLightspeed'                 as Source
+       'Lightspeed'                 as Source
 from ctelightspeedcombined;
 
 
 
+select PROD_ID, OPTION_ID from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
 
+select * from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS O
+join FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS OP
+on o.ORDER_ID = op.ORDER_ID
+where O.ORDER_ID = 11477597
+
+
+-- Orders is the main meta for customer purchases.
+-- Orders_prods is the line items for orders in a particular order. (Customer may buy many)
+--
+-- Best way to connect on variant/option level:
+-- orders_prods.option_id  ->  product_options.prod_option_id
+--
+-- If you just need main product level
+-- orders_prods.prod_id -> products.prod_id
+-- orders_prods.prod_id -> products.site_specific.prod_id
