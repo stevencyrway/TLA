@@ -16,6 +16,19 @@ CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.ORDER_FACT
 As
 
 --Inventory Table Build
+-- /// NOTES ///
+-- Per Aras who designed most of the Yandy architecture
+-- Orders is the main meta for customer purchases.
+-- Orders_prods is the line items for orders in a particular order. (Customer may buy many)
+--
+-- Best way to connect on variant/option level:
+-- orders_prods.option_id  ->  product_options.prod_option_id
+--
+-- If you just need main product level
+-- orders_prods.prod_id -> products.prod_id
+-- orders_prods.prod_id -> products.site_specific.prod_id
+
+
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
@@ -105,22 +118,3 @@ Select to_date(ORDERED_DATE)              as SoldDate,
        'Lightspeed'                 as Source
 from ctelightspeedcombined;
 
-
-
-select PROD_ID, OPTION_ID from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS
-
-select * from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS O
-join FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS OP
-on o.ORDER_ID = op.ORDER_ID
-where O.ORDER_ID = 11477597
-
-
--- Orders is the main meta for customer purchases.
--- Orders_prods is the line items for orders in a particular order. (Customer may buy many)
---
--- Best way to connect on variant/option level:
--- orders_prods.option_id  ->  product_options.prod_option_id
---
--- If you just need main product level
--- orders_prods.prod_id -> products.prod_id
--- orders_prods.prod_id -> products.site_specific.prod_id
