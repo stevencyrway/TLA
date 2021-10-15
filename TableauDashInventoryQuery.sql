@@ -18,25 +18,24 @@ WITH RECURSIVE
                                        categoryid,
                                        source,
                                        previousrecorddate,
-                                       case when PreviousRecordDate >= date then date
-                                     when PreviousRecordDate < date then dateadd(day, 1, PreviousRecordDate) end as StartRecordDate
+                                       case
+                                           when PreviousRecordDate >= date then date
+                                           when PreviousRecordDate < date
+                                               then dateadd(day, 1, PreviousRecordDate) end as StartRecordDate
                                 from cteinventoryDateLead)
 
 ---- /// Final Table for Tableau /// ----
 
-Select DD.date,
+Select last_day(DD.Date, 'week') as WeekEnding,
        DD.year,
        DD.month,
        DD.month_name,
-       DD.day_of_mon,
-       DD.day_of_week,
        DD.week_of_year,
-       DD.day_of_year,
        LDA.sku,
        LDA.itemuuid,
-       LDA.qoh,
-       LDA.backorder,
-       LDA.cost,
+       sum(LDA.qoh) as QOH_SUM,
+       sum(LDA.backorder) Backorder_SUM,
+       avg(LDA.cost) AVG_Cost,
        LDA.categoryid,
        LDA.source,
        ID.brandname,
@@ -44,15 +43,17 @@ Select DD.date,
        ID.color,
        ID.size,
        ID.attribute3,
-       LD.category as GeoRegion,
-      (LDA.cost * LDA.qoh) as InventoryDollars
+       LD.category                    as GeoRegion,
+       (sum(LDA.cost) * avg(LDA.qoh)) as InventoryDollars
 from FIVETRAN_DB.prod.DATE_DIM DD
          left outer join cteinventoryLeadDayAdd LDA
-              on DD.DATE >= LDA.StartRecordDate
-                  and DD.Date <= lda.DATE
+                         on DD.DATE >= LDA.StartRecordDate
+                             and DD.Date <= lda.DATE
          LEFT OUTER join FIVETRAN_DB.PROD.ITEM_DIM ID
-              on lda.ITEMUUID = id.UUID
+                         on lda.ITEMUUID = id.UUID
          LEFT OUTER join FIVETRAN_DB.prod.LOCATION_DIM LD
-              on lda.LOCATIONID = ld.LOCATIONID
+                         on lda.LOCATIONID = ld.LOCATIONID
+Group by dd.year, last_day(DD.Date, 'week'), DD.month, DD.month_name, DD.week_of_year, LDA.itemuuid, LDA.sku,
+         LDA.categoryid, LDA.source, ID.brandname, ID.description, ID.color, ID.size, ID.attribute3, LD.category
 
 

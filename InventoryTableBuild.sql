@@ -52,10 +52,19 @@ WITH RECURSIVE
                                  PROD_OPTION_ID,
                                  po.option_sku
                           from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po)
-   , cteyandyavgcost as (select FIFO_LEDGER.prod_option_id,
-                                avg(FIFO_LEDGER.cost_price) as Cost
-                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER ---Need to add date to this calculation. this table contains historical costs received.
-                         group by PROD_OPTION_ID)
+   , cteyandyavgcost as (Select prod_option_id,
+                                last_day(to_date(to_timestamp(STAMPED)))                                              as MonthEnding,
+                                avg(cost_price)                                                                       as MonthlyCostAvg,
+                                Lead(last_day(to_date(to_timestamp(STAMPED))))
+                                     OVER (ORDER BY FL.prod_option_id, last_day(to_date(to_timestamp(STAMPED))) desc) as PreviousMonthEnding
+                         from FIVETRAN_DB.POSTGRES_PUBLIC.FIFO_LEDGER FL
+                         group by last_day(to_date(to_timestamp(STAMPED))), to_timestamp(stamped), prod_option_id)
+   , cteyandyinvcostLeadDayAdd as (Select *,
+                                       case
+                                           when PreviousMonthEnding >= date then date
+                                           when PreviousMonthEnding < date
+                                               then dateadd(month, 1, PreviousMonthEnding) end as StartRecordDate
+                                from cteyandyavgcost)
    , cteyandyinventorycombined as (Select inventorydate,
                                           option_id,
                                           qoh,
@@ -66,11 +75,13 @@ WITH RECURSIVE
                                           CategoryID,
                                           option_sku,
                                           PROD_NAME,
-                                          cteyandyavgcost.Cost
+                                          cteyandyavgcost.MonthlyCostAvg
                                    from cteYandyInventoryHistoryPrep
                                             join cteYandyProducts on PROD_OPTION_ID = OPTION_ID
                                             join cteyandyavgcost
                                                  on cteyandyavgcost.PROD_OPTION_ID = cteYandyProducts.PROD_OPTION_ID
+                                                and InventoryDate <= MonthEnding
+                                       and InventoryDate >= MonthEnding
                                             join cteyandycategoryjoin
                                                  on cteYandyProducts.PROD_ID = cteyandycategoryjoin.PROD_ID
                                             join cteyandyproductname
