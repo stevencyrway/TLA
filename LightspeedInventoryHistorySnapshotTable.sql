@@ -27,6 +27,7 @@ WITH RECURSIVE
                           FROM FIVETRAN_DB.LIGHT_SPEED_RETAIL.ITEM_HISTORY)
    -- Assigns row numbers to to get values over time
    , cteLightspeedInventory AS (Select to_date(UPDATED_TIME)                                                                                   as InventoryDate,
+                                       id,
                                        item_id,
                                        shop_id,
                                        qoh,

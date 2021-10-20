@@ -73,8 +73,7 @@ WITH RECURSIVE
    , cteyandycategoryjoin as (Select PROD_ID,
                                      concat(PTYPE, '_', N2) as CategoryID
                               from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS)
-   , cteYandyProducts AS (select concat('Yandy', '/', to_varchar(po.PROD_ID), '/',
-                                        to_varchar(po.PROD_OPTION_ID)) as UUID,
+   , cteYandyProducts AS (select concat('Yandy', '/', to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
                                  po.PROD_ID,
                                  PROD_OPTION_ID,
                                  po.option_sku,

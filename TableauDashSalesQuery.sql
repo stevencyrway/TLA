@@ -9,19 +9,14 @@ from FIVETRAN_DB.prod.DATE_DIM DD
 
 -- count of order items with item join, for some reason itemuuid is not joining well. some items in orders that aren't in products.
 select count(distinct itemuuid), orf.source from fivetran_db.prod.ORDER_FACT ORF
-join FIVETRAN_DB.PROD.ITEM_DIM ID
-on ORF.ITEMUUID = id.UUID
-where DATE >= '2018-01-02'
+-- join FIVETRAN_DB.PROD.ITEM_DI3M ID
+-- on ORF.ITEMUUID = id.UUID
 group by orf.SOURCE;
 
--- count of order items,
-select count(distinct itemuuid), orf.source from fivetran_db.prod.ORDER_FACT ORF
-where DATE >= '2018-01-02'
-group by orf.SOURCE;
 
 --count of items
-select count(distinct UUID) from FIVETRAN_DB.PROD.ITEM_DIM
-where source = 'Yandy';
+select count(distinct UUID), source from FIVETRAN_DB.PROD.ITEM_DIM ID
+group by id.SOURCE
 
 Select ORDER_HISTORY.id,
                                    ORDER_HISTORY.updated_time,
@@ -44,6 +39,12 @@ where DATE >= '2018-01-02'
 and id.UUID is null
 
 select * from FIVETRAN_DB.PROD.ITEM_DIM
-where UUID =  'Yandy/111434/477304'
+where UUID =  'Yandy/1/0'
 
 
+Select * from FIVETRAN_DB.PROD.ORDER_FACT
+where ITEMUUID = 'Lightspeed/10362'
+
+
+
+count(item)
