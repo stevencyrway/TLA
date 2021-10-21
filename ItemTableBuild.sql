@@ -22,7 +22,7 @@ WITH RECURSIVE
 ---- /// Lightspeed /// ----
    -- Assigns row numbers to to get values over time and identify when more than value occurs in a day.
     ctelightspeedItem AS (Select ID,
-                                 concat('Lightspeed', '/', to_varchar(ID))                      as UUID,
+                                 concat('Lightspeed','-', to_varchar(ID))                      as UUID,
                                  CUSTOM_SKU,
                                  to_varchar(MANUFACTURER_ID)                                    as ManufacturerID,
                                  DEFAULT_VENDOR_ID                                              as VendorID,
@@ -73,7 +73,7 @@ WITH RECURSIVE
    , cteyandycategoryjoin as (Select PROD_ID,
                                      concat(PTYPE, '_', N2) as CategoryID
                               from FIVETRAN_DB.POSTGRES_PUBLIC.PRODUCTS)
-   , cteYandyProducts AS (select concat('Yandy', '/', to_varchar(po.PROD_ID), '/', to_varchar(po.PROD_OPTION_ID)) as UUID,
+   , cteYandyProducts AS (select concat('Yandy','-', to_varchar(po.PROD_ID),'-', to_varchar(po.PROD_OPTION_ID)) as UUID,
                                  po.PROD_ID,
                                  PROD_OPTION_ID,
                                  po.option_sku,
