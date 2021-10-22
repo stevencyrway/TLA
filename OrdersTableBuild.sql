@@ -73,20 +73,24 @@ WITH RECURSIVE
                                                  and cteLightspeedorderlines.OrderlineRownumber = 1)
 ---- /// YANDY /// ----
    -- Assigns row numbers to multiple inventory moves per day
-   , cteyandyorders as (select returned, --boolean true or false
-                               order_id,
-                               order_date,
-                               backorder_date,
-                               prod_id,
-                               option_id,
-                               quantity,
-                               discount_percent,
-                               tax,
-                               total_prod_price,
-                               SITE_ID
-                        from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS)
---    , cteYandyInventoryHistoryPrep AS ()
---    , cteyandyinventorycombined as ()
+   , cteyandyorders as (Select o.ORDER_ID,
+                               op.ORDERS_PRODS_ID,
+                               o.ORDER_DATE,
+                               op.BACKORDER_DATE,
+                               op.PROD_ID,
+                               op.OPTION_ID,
+                               op.quantity,
+                               op.discount_percent,
+                               op.tax,
+                               op.total_prod_price,
+                               o.order_status,
+                               op.SITE_ID, -- site id 1 = Yandy, SITE_ID = 2 then 'Playboy'
+                               op.RETURNED
+                        from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS O
+                                 join FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS OP
+                                      on O.ORDER_ID = OP.ORDERS_PRODS_ID
+                        where O.ORDER_DATE >= '2020-01-01'
+                          and o.ORDER_STATUS in (1, 2, 3))--this filters out all orders that are active and not cancelled
 
 
 ---//// WHERE IT ALL COMBINES ////---
@@ -101,7 +105,7 @@ Select to_date(ORDER_DATE)                                                   as 
        QUANTITY                                                              as QTY_SOLD,
        TOTAL_PROD_PRICE                                                      as Price,
        DISCOUNT_PERCENT                                                      as Discount_Amount,
-       null                                                                  as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
+       SITE_ID                                                               as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
        'Yandy'                                                               as Source
 from cteyandyorders
 

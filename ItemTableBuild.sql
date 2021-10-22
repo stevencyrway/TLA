@@ -88,8 +88,7 @@ WITH RECURSIVE
                           from FIVETRAN_DB.POSTGRES_PUBLIC.product_options po
                                    join cteyandybrands B on po.PROD_ID = b.PROD_ID
                                    LEFT JOIN FIVETRAN_DB.POSTGRES_PUBLIC.products_site_specific pss
-                                             ON po.prod_id = pss.prod_id AND pss.site_id = 1
-                                                 and IS_AMAZON_PRODUCT is null)
+                                             ON po.prod_id = pss.prod_id AND pss.site_id = 1)
    , cteyandyProductSizes as (select SIZE_TYPE_ID, SIZE_TYPE
                               from FIVETRAN_DB.POSTGRES_PUBLIC.SIZES_TABLE
                               group by SIZE_TYPE_ID, SIZE_TYPE)
