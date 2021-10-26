@@ -1,57 +1,37 @@
 use warehouse COMPUTE_WH;
 
-Select o.ORDER_ID,
-       op.ORDERS_PRODS_ID,
-       o.ORDER_DATE,
-       op.BACKORDER_DATE,
-       op.PROD_ID,
-       op.OPTION_ID,
-       op.quantity,
-       op.discount_percent,
-       op.tax,
-       op.total_prod_price,
-       o.order_status,
-       case
-           when op.SITE_ID = 1 then 'Yandy'
-           when op.SITE_ID = 2 then 'Playboy'
-       end as order_site,
-       op.RETURNED
-from FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS O
-         join FIVETRAN_DB.POSTGRES_PUBLIC.ORDERS_PRODS OP
-              on O.ORDER_ID = OP.ORDERS_PRODS_ID
-where O.ORDER_DATE >= '2020-01-01'
-  and o.ORDER_STATUS in (1, 2, 3); --this filters out all orders that are active and not cancelled
+Select
+       ORF.itemuuid,
+       sum(ORF.qty_sold) as QtySold,
+       sum(ORF.price) as SalesDollars,
+       AVG(ORF.discount) as AvgPercentDiscount,
+       ORF.source
+from FIVETRAN_DB.prod.DATE_DIM DD
+         join FIVETRAN_DB.PROD.ORDER_FACT ORF
+              on dd.DATE = orf.DATE
+         left outer join FIVETRAN_DB.PROD.ITEM_DIM ID
+                         on ORF.ITEMUUID = id.UUID
+where orf.DISCOUNT > 0
+Group by  ORF.itemuuid,  ORF.source
 
 
--- Friday, October 22, 2021
--- 11:02 AM
---
--- Order status, are the ones for items solds
--- 1
--- 2
--- 3
---
--- Status 4 is  cancelled
--- status
---
--- Innerjoin orders prods
---
--- Orders_prods_prodid
---
--- Isreturned = false
---
---
--- Siteid = 2  is playboy or pleasure for all
--- Site id 1 = 1 yandy
---
--- Print active = true
---
---
--- Bo_schedule in product options will show amount on backorder
---
---
--- Print active = false is backorder
---
--- Onway column
---
--- Information on back orders, order sheets shows backorder info or purchase orders.
+
+select source, ITEMUUID, AVGPERCENTDISCOUNT from FIVETRAN_DB.PROD.SALESVIEW
+where SOURCE = 'Lightspeed'
+and date
+group by source, ITEMUUID, AVGPERCENTDISCOUNT
+
+
+Select ORDER_HISTORY.id,
+                                   ORDER_HISTORY.updated_time,
+                                   ORDER_HISTORY.shop_id,
+                                   ORDER_HISTORY.ordered_date,
+                                   ORDER_HISTORY.received_date,
+                                   ORDER_HISTORY.arrival_date,
+                                   ORDER_HISTORY.ship_cost,
+                                   (ORDER_HISTORY.discount * 100),
+                                   (ORDER_HISTORY.total_discount),
+                                   ORDER_HISTORY.total_quantity,
+                                   ROW_NUMBER() OVER (PARTITION BY ORDER_HISTORY.ID ORDER BY ORDER_HISTORY.UPDATED_TIME desc) as OrderRowNumber
+                            from FIVETRAN_DB.LIGHT_SPEED_RETAIL.ORDER_HISTORY
+where TOTAL_DISCOUNT > 0

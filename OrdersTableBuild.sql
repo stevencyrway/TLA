@@ -15,20 +15,6 @@ CREATE OR REPLACE TABLE FIVETRAN_DB.PROD.ORDER_FACT
         )
 As
 
---Inventory Table Build
--- /// NOTES ///
--- Per Aras who designed most of the Yandy architecture
--- Orders is the main meta for customer purchases.
--- Orders_prods is the line items for orders in a particular order. (Customer may buy many)
---
--- Best way to connect on variant/option level:
--- orders_prods.option_id  ->  product_options.prod_option_id
---
--- If you just need main product level
--- orders_prods.prod_id -> products.prod_id
--- orders_prods.prod_id -> products.site_specific.prod_id
-
-
 -- !! Need to confirm timezones of each data that's landed to ensure proper time zone offset.
 WITH RECURSIVE
 ---- /// Lightspeed /// ----
@@ -63,7 +49,7 @@ WITH RECURSIVE
                                       cteLightspeedorderlines.item_id,
                                       cteLightspeedorderlines.price,
                                       cteLightspeedorderlines.original_price,
-                                      cteLightspeedorders.discount,
+                                      (cteLightspeedorders.discount * 100) as discount,
                                       cteLightspeedorderlines.quantity,
                                       cteLightspeedorderlines.total
                                from ctelightspeedorders
@@ -98,7 +84,7 @@ WITH RECURSIVE
 -- This methodology will be followed for all tables.
 
 
--- Yandy
+-- -- Yandy
 Select to_date(ORDER_DATE)                                                   as Date,
        concat('Yandy', '/', to_varchar(PROD_ID), '/', to_varchar(OPTION_ID)) as ItemUUID,   --UUID for Item Dim Table
        to_varchar(ORDER_ID)                                                  as OrderUUID,
@@ -119,6 +105,6 @@ Select to_date(ORDERED_DATE)              as SoldDate,
        PRICE                              as Price,
        DISCOUNT                           as Discount_Amount,
        SHOP_ID                            as LocationID, --couldn't find shop values in yandy data, need to ask Aras.
-       'Lightspeed'                 as Source
+       'Lightspeed'                       as Source
 from ctelightspeedcombined;
 
